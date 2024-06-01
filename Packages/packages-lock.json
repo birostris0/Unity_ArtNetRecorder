@@ -1,5 +1,13 @@
 {
   "dependencies": {
+    "birostris0.wip.artnetrecorder.timeline": {
+      "version": "file:ArtNetRecorder.Timeline",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.timeline": "1.7.1"
+      }
+    },
     "com.cysharp.unitask": {
       "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
       "depth": 0,
