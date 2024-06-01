@@ -1,0 +1,7 @@
+{
+  "name": "birostris0.wip.artnetrecorder.timeline",
+  "version": "0.1.0",
+  "dependencies": {
+    "com.unity.timeline": "1.7.1"
+  }
+}
