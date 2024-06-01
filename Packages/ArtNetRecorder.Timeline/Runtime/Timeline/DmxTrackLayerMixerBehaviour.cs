@@ -13,7 +13,7 @@ namespace wip.ArtNetRecorder.Timeline
             if (!Track)
                 return;
 
-            Span<float> layerMixedUniverses = stackalloc float[Track.maxUniverse * Track.maxDmxSize];
+            Span<float> layerMixedUniverses = stackalloc float[Track.MaxUniverse * Track.MaxDmxSize];
             layerMixedUniverses.Clear();
 
             for (int i = 0; i < playable.GetInputCount(); i++)
@@ -28,8 +28,8 @@ namespace wip.ArtNetRecorder.Timeline
                     if (mixedDmx is null || mixedDmx.Length == 0)
                         continue;
 
-                    var offset = universe * Track.maxDmxSize;
-                    var layerMixedDmx = layerMixedUniverses[offset..(offset + Track.maxDmxSize)];
+                    var offset = universe * Track.MaxDmxSize;
+                    var layerMixedDmx = layerMixedUniverses[offset..(offset + Track.MaxDmxSize)];
 
                     for (int channel = 0; channel < mixedDmx.Length; channel++)
                     {

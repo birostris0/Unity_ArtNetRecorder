@@ -16,7 +16,7 @@ namespace wip.ArtNetRecorder.Timeline
             if (!Track)
                 return;
 
-            mixedUniverses = new float[Track.maxUniverse][];
+            mixedUniverses = new float[Track.MaxUniverse][];
 
             for (int i = 0; i < playable.GetInputCount(); i++)
             {
@@ -34,7 +34,7 @@ namespace wip.ArtNetRecorder.Timeline
                     var mixedDmx = mixedUniverses[universeData.universe] switch
                     {
                         float[] mixed => mixed,
-                        _ => new float[Track.maxDmxSize]
+                        _ => new float[Track.MaxDmxSize]
                     };
 
                     for (int channel = 0; channel < dmx.Length; channel++)
