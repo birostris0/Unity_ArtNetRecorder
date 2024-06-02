@@ -13,27 +13,39 @@ namespace wip.ArtNetRecorder.Timeline
             if (!Track)
                 return;
 
-            Span<float> layerMixedUniverses = stackalloc float[Track.MaxUniverse * Track.MaxDmxSize];
+            Span<float> layerMixedUniverses = stackalloc float[Track.ArtNetSize];
             layerMixedUniverses.Clear();
 
-            for (int i = 0; i < playable.GetInputCount(); i++)
+            for (int trackIndex = 0; trackIndex < playable.GetInputCount(); trackIndex++)
             {
-                var behaviour = ((ScriptPlayable<DmxTrackMixerBehaviour>)playable.GetInput(i)).GetBehaviour();
-                if (behaviour.mixedUniverses is not float[][] mixedUniverses || mixedUniverses.Length == 0)
+                var behaviour = ((ScriptPlayable<DmxTrackMixerBehaviour>)playable.GetInput(trackIndex)).GetBehaviour();
+                var clipCount = behaviour.clipCount;
+                if (clipCount == 0)
                     continue;
 
-                for (int universe = 0; universe < mixedUniverses.Length; universe++)
+                if (behaviour.trackUniverses is not UniverseData[] trackUniverses || trackUniverses.Length != Track.MaxUniverse * clipCount)
+                    continue;
+
+                if (behaviour.clipWeights is not float[] clipWeights || clipWeights.Length != clipCount)
+                    continue;
+
+                for (int universeIndex = 0; universeIndex < Track.MaxUniverse; universeIndex++)
                 {
-                    var mixedDmx = mixedUniverses[universe];
-                    if (mixedDmx is null || mixedDmx.Length == 0)
-                        continue;
+                    var universeOffset = universeIndex * Track.MaxDmxSize;
+                    var layerMixedDmx = layerMixedUniverses[universeOffset..(universeOffset + Track.MaxDmxSize)];
 
-                    var offset = universe * Track.MaxDmxSize;
-                    var layerMixedDmx = layerMixedUniverses[offset..(offset + Track.MaxDmxSize)];
-
-                    for (int channel = 0; channel < mixedDmx.Length; channel++)
+                    for (int channel = 0; channel < Track.MaxDmxSize; channel++)
                     {
-                        layerMixedDmx[channel] = Math.Clamp(mixedDmx[channel] + layerMixedDmx[channel], 0, 255);
+                        float mixedChannelData = 0;
+                        for (int clipIndex = 0; clipIndex < clipCount; clipIndex++)
+                        {
+                            if (trackUniverses[(universeIndex * clipCount) + clipIndex] is not UniverseData universeData)
+                                continue;
+
+                            mixedChannelData += universeData.data[channel] * clipWeights[clipIndex];
+                        }
+
+                        layerMixedDmx[channel] = Math.Clamp(mixedChannelData + layerMixedDmx[channel], 0, 255);
                     }
                 }
             }

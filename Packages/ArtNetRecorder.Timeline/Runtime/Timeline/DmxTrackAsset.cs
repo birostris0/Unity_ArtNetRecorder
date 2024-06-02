@@ -20,6 +20,7 @@ namespace wip.ArtNetRecorder.Timeline
 
         internal int MaxDmxSize => RootTrack.maxDmxSize;
         internal int MaxUniverse => RootTrack.maxUniverse;
+        internal int ArtNetSize => MaxUniverse * MaxDmxSize;
 
         public override Playable CreateTrackMixer(PlayableGraph graph, GameObject go, int inputCount)
         {

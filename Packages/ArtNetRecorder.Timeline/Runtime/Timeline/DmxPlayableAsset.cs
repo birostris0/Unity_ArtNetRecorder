@@ -17,7 +17,7 @@ namespace wip.ArtNetRecorder.Timeline
             ? dmx.Duration
             : 120;
 
-        public ClipCaps clipCaps => ClipCaps.None;
+        public ClipCaps clipCaps => ClipCaps.All;
 
         public TimelineClip Clip { get; internal set; }
         public DmxTrackAsset Track { get; internal set; }

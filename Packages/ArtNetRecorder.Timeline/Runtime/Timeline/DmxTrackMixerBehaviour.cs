@@ -7,7 +7,9 @@ namespace wip.ArtNetRecorder.Timeline
     [Serializable]
     public class DmxTrackMixerBehaviour : PlayableBehaviour
     {
-        internal float[][] mixedUniverses;
+        internal int clipCount;
+        internal UniverseData[] trackUniverses;
+        internal float[] clipWeights;
 
         public DmxTrackAsset Track { get; internal set; }
 
@@ -16,34 +18,32 @@ namespace wip.ArtNetRecorder.Timeline
             if (!Track)
                 return;
 
-            mixedUniverses = new float[Track.MaxUniverse][];
+            clipCount = playable.GetInputCount();
+            if (clipCount == 0)
+                return;
 
-            for (int i = 0; i < playable.GetInputCount(); i++)
+            trackUniverses = new UniverseData[Track.MaxUniverse * clipCount];
+            clipWeights = new float[clipCount];
+
+            for (int clipIndex = 0; clipIndex < clipCount; clipIndex++)
             {
-                var weight = playable.GetInputWeight(i);
-                if (playable.GetPlayState() is not PlayState.Playing || weight == 0)
+                var clipWeight = playable.GetInputWeight(clipIndex);
+                if (playable.GetPlayState() is not PlayState.Playing || clipWeight == 0)
                     continue;
 
-                var behaviour = ((ScriptPlayable<DmxPlayableBehaviour>)playable.GetInput(i)).GetBehaviour();
+                var behaviour = ((ScriptPlayable<DmxPlayableBehaviour>)playable.GetInput(clipIndex)).GetBehaviour();
                 if (behaviour.packet?.data is not List<UniverseData> data || data.Count == 0)
                     continue;
 
                 foreach (var universeData in data)
                 {
-                    var dmx = universeData.data;
-                    var mixedDmx = mixedUniverses[universeData.universe] switch
-                    {
-                        float[] mixed => mixed,
-                        _ => new float[Track.MaxDmxSize]
-                    };
+                    if (universeData.data is not byte[] dmx || dmx.Length == 0)
+                        continue;
 
-                    for (int channel = 0; channel < dmx.Length; channel++)
-                    {
-                        mixedDmx[channel] += Math.Clamp(dmx[channel] * weight, 0, 255);
-                    }
-
-                    mixedUniverses[universeData.universe] = mixedDmx;
+                    trackUniverses[(universeData.universe * clipCount) + clipIndex] = universeData;
                 }
+
+                clipWeights[clipIndex] = clipWeight;
             }
         }
     }

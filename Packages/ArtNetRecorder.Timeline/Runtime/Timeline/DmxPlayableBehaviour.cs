@@ -13,7 +13,7 @@ namespace wip.ArtNetRecorder.Timeline
 
         public override void ProcessFrame(Playable playable, FrameData info, object playerData)
         {
-            var time = playable.GetTime();
+            var time = playable.GetTime() * 1000;
 
             int sequence = 0;
             packet = null;
@@ -26,7 +26,7 @@ namespace wip.ArtNetRecorder.Timeline
                 if (packet is null)
                     break;
 
-                if (packet.time / 1000 > time)
+                if (packet.time > time)
                     break;
 
                 sequence++;
