@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.Playables;
 
 namespace wip.ArtNetRecorder.Timeline
@@ -7,13 +6,23 @@ namespace wip.ArtNetRecorder.Timeline
     [Serializable]
     public class DmxTrackMixerBehaviour : PlayableBehaviour
     {
-        internal int clipCount;
-        internal UniverseData[] trackUniverses;
-        internal float[] clipWeights;
+        protected int clipCount;
+        public int ClipCount => clipCount;
 
-        public DmxTrackAsset Track { get; internal set; }
+        protected float[] mixedUniverses;
+        public ReadOnlySpan<float> MixedUniverses => mixedUniverses;
+
+        public DmxTrackAsset Track { get; set; }
 
         public override void ProcessFrame(Playable playable, FrameData info, object playerData)
+        {
+            Span<float> mixedUniverses = stackalloc float[Track.ArtNetSize];
+            mixedUniverses.Clear();
+            ProcessFrame(playable, Track, ref clipCount, ref mixedUniverses);
+            this.mixedUniverses = mixedUniverses.ToArray();
+        }
+
+        protected static void ProcessFrame(in Playable playable, in DmxTrackAsset Track, ref int clipCount, ref Span<float> mixedUniverses)
         {
             if (!Track)
                 return;
@@ -22,9 +31,6 @@ namespace wip.ArtNetRecorder.Timeline
             if (clipCount == 0)
                 return;
 
-            trackUniverses = new UniverseData[Track.MaxUniverse * clipCount];
-            clipWeights = new float[clipCount];
-
             for (int clipIndex = 0; clipIndex < clipCount; clipIndex++)
             {
                 var clipWeight = playable.GetInputWeight(clipIndex);
@@ -32,18 +38,14 @@ namespace wip.ArtNetRecorder.Timeline
                     continue;
 
                 var behaviour = ((ScriptPlayable<DmxPlayableBehaviour>)playable.GetInput(clipIndex)).GetBehaviour();
-                if (behaviour.packet?.data is not List<UniverseData> data || data.Count == 0)
+                var packetData = behaviour.Packet.Data;
+                if (packetData.IsEmpty)
                     continue;
 
-                foreach (var universeData in data)
+                for (int i = 0; i < packetData.Length; i++)
                 {
-                    if (universeData.data is not byte[] dmx || dmx.Length == 0)
-                        continue;
-
-                    trackUniverses[(universeData.universe * clipCount) + clipIndex] = universeData;
+                    mixedUniverses[i] += packetData[i] * clipWeight;
                 }
-
-                clipWeights[clipIndex] = clipWeight;
             }
         }
     }

@@ -9,18 +9,19 @@ namespace wip.ArtNetRecorder.Timeline
     [Serializable]
     [System.ComponentModel.DisplayName("DMX Track")]
     [TrackClipType(typeof(DmxPlayableAsset))]
-    public class DmxTrackAsset : TrackAsset, ILayerable
+    public abstract class DmxTrackAsset : TrackAsset, ILayerable
     {
-        private int maxDmxSize;
-        private int maxUniverse;
-
         public DmxTrackAsset RootTrack => isSubTrack
             ? (parent as DmxTrackAsset).RootTrack
             : this;
 
-        internal int MaxDmxSize => RootTrack.maxDmxSize;
-        internal int MaxUniverse => RootTrack.maxUniverse;
-        internal int ArtNetSize => MaxUniverse * MaxDmxSize;
+        protected int maxDmxSize;
+        public int MaxDmxSize => RootTrack.maxDmxSize;
+
+        protected int maxUniverse;
+        public int MaxUniverse => RootTrack.maxUniverse;
+
+        public int ArtNetSize => MaxUniverse * MaxDmxSize;
 
         public override Playable CreateTrackMixer(PlayableGraph graph, GameObject go, int inputCount)
         {
@@ -32,6 +33,17 @@ namespace wip.ArtNetRecorder.Timeline
         }
 
         public Playable CreateLayerMixer(PlayableGraph graph, GameObject go, int inputCount)
+        {
+            SetCapacity(RootTrack, this);
+
+            var playable = ScriptPlayable<DmxTrackLayerMixerBehaviour>.Create(graph, inputCount);
+            var behaviour = playable.GetBehaviour();
+            behaviour.Track = this;
+
+            return playable;
+        }
+
+        protected static void SetCapacity(DmxTrackAsset RootTrack, in DmxTrackAsset self)
         {
             var allClips = RootTrack
                 .GetChildTracks()
@@ -46,20 +58,14 @@ namespace wip.ArtNetRecorder.Timeline
                     continue;
 
                 clipAsset.Clip = clip;
-                clipAsset.Track = this;
+                clipAsset.Track = self;
 
                 if (clipAsset.Dmx)
                 {
-                    RootTrack.maxDmxSize = Math.Max(RootTrack.maxDmxSize, clipAsset.Dmx.Data?.Max(packet => packet?.data?.Max(universe => universe?.data?.Length ?? 0) ?? 0) ?? 0);
+                    RootTrack.maxDmxSize = Math.Max(RootTrack.maxDmxSize, RuntimeDmxRecordPacket.dmxSize);
                     RootTrack.maxUniverse = Math.Max(RootTrack.maxUniverse, clipAsset.Dmx.MaxUniverse + 1);
                 }
             }
-
-            var playable = ScriptPlayable<DmxTrackLayerMixerBehaviour>.Create(graph, inputCount);
-            var behaviour = playable.GetBehaviour();
-            behaviour.Track = this;
-
-            return playable;
         }
     }
 }

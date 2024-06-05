@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.Playables;
 
 namespace wip.ArtNetRecorder.Timeline
@@ -7,29 +6,30 @@ namespace wip.ArtNetRecorder.Timeline
     [Serializable]
     public class DmxPlayableBehaviour : PlayableBehaviour
     {
-        internal DmxRecordPacket packet;
+        protected RuntimeDmxRecordPacket packet;
+        public ref readonly RuntimeDmxRecordPacket Packet => ref packet;
 
-        public DmxPlayableAsset Clip { get; internal set; }
+        public DmxPlayableAsset Clip { get; set; }
 
         public override void ProcessFrame(Playable playable, FrameData info, object playerData)
         {
-            var time = playable.GetTime() * 1000;
+            ProcessFrame(playable, Clip, ref packet);
+        }
 
-            int sequence = 0;
-            packet = null;
-            if (time < 0 || !Clip || !Clip.Dmx || Clip.Dmx.Data is not List<DmxRecordPacket> data || data.Count == 0)
+        protected static void ProcessFrame(in Playable playable, in DmxPlayableAsset Clip, ref RuntimeDmxRecordPacket packet)
+        {
+            var time = playable.GetTime();
+
+            packet = default;
+            if (time < 0 || !Clip)
                 return;
 
-            while (sequence < data.Count)
+            var packets = Clip.Packets;
+            for (int sequence = 0; sequence < packets.Length; sequence++)
             {
-                packet = data[sequence];
-                if (packet is null)
-                    break;
-
+                packet = packets[sequence];
                 if (packet.time > time)
                     break;
-
-                sequence++;
             }
         }
     }

@@ -18,7 +18,7 @@ namespace wip.ArtNetRecorder.Timeline
         {
             asset.duration = record.Duration / 1000;
             asset.data = record.Data?.ToList() ?? new();
-            asset.maxUniverse = record.Data?.Max(packet => packet.numUniverses) ?? 0;
+            asset.maxUniverse = record.Data?.Max(packet => packet?.data?.Max(universeData => universeData?.universe ?? 0) ?? 0) ?? 0;
         }
     }
 }
